@@ -41,8 +41,8 @@ install(
 
 install(
   PROGRAMS
-  scripts/pure_pursuit.py
   scripts/pure_pursuit_tb3.py
+  scripts/pure_pursuit_ackermann.py
   scripts/model_predictive_control.py
   scripts/test_path_publisher.py
   DESTINATION lib/${PROJECT_NAME}
