@@ -40,8 +40,8 @@ STOP_SPEED = 0.02  # [m/s] stop speed threshold
 N_IND_SEARCH = 10  # search index number
 
 # Iteration parameters
-MAX_ITER = 3  # max iteration for MPC
-DU_TH = 0.1  # iteration finish threshold
+MAX_ITER = 5  # max iteration for MPC (increased for better convergence)
+DU_TH = 0.5  # iteration finish threshold (relaxed for faster convergence)
 
 
 class State:
@@ -313,9 +313,9 @@ def iterative_linear_mpc_control(xref, x0, dref, oa, oomega):
 
         du = sum(abs(np.array(oa) - np.array(poa))) + sum(abs(np.array(oomega) - np.array(poomega)))
         if du <= DU_TH:
+            # Converged successfully
             break
-    else:
-        print("Iterative MPC reached max iterations")
+    # Note: Removed "max iterations" message as it's normal during steady-state tracking
 
     return oa, oomega, ox, oy, oyaw, ov
 

@@ -147,6 +147,23 @@ class Path_Tracking_Simulator(QDialog):
                 print("all edges with less then 0.2 length are removed.")
                 break
 
+        # Validate that we have enough points after edge removal
+        if len(self.map_scene.path) < 2:
+            print(f"Error: Not enough points after edge removal (only {len(self.map_scene.path)} point(s) remaining).")
+            print("path generation failed. Please draw a longer path.")
+            self.map_scene.path.clear()
+            self.map_scene.clear()
+            path_to_publish.clear()
+            self.map_scene.prev_x = 250
+            self.map_scene.prev_y = 250
+            self.map_scene.path.append([(self.map_scene.prev_x - self.map_scene.center_x)*self.map_scene.scale,
+                              -1*(self.map_scene.prev_y - self.map_scene.center_y)*self.map_scene.scale])
+            self.map_scene.addLine(QLineF(250, 0, 250, 500), self.center_line)
+            self.map_scene.addLine(QLineF(0, 250, 500, 250), self.center_line)
+            return
+
+        print(f"Path simplified to {len(self.map_scene.path)} points. Starting interpolation...")
+
         while True:
             dist = math.sqrt((path_to_publish[path_to_publish_index][0] - self.map_scene.path[path_index][0])**2 +
                              (path_to_publish[path_to_publish_index][1] - self.map_scene.path[path_index][1])**2)
@@ -185,9 +202,10 @@ class Path_Tracking_Simulator(QDialog):
             else:
                 path_index += 1
 
-            if path_index == len(self.map_scene.path)-1:
+            if path_index >= len(self.map_scene.path):
                 self.pixmap = self.ui.map_graphicsView.grab(QRect(QPoint(0,0),QSize(500, 500)))
                 self.enable_repaint = True
+                print(f"Path generation completed successfully! Generated {len(path_to_publish)} waypoints.")
                 break
 
             if path_to_publish_index > 10000:
