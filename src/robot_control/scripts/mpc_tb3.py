@@ -381,6 +381,9 @@ class MPCController(Node):
         # Publisher for TurtleBot3 velocity commands
         self.publisher_cmd_vel = self.create_publisher(Twist, '/cmd_vel', 10)
 
+        # Publisher for path tracking errors
+        self.publisher_path_error = self.create_publisher(Float64MultiArray, '/path_error', 10)
+
         self.time_interval = DT
         self.timer = self.create_timer(self.time_interval, self.timer_callback)
 
@@ -434,6 +437,21 @@ class MPCController(Node):
             xref, self.target_ind, dref = calc_ref_trajectory(
                 self.state, self.cx, self.cy, self.cyaw, self.sp,
                 self.dl, self.target_ind)
+
+            # Calculate and publish path tracking errors
+            _, cross_track_error = calc_nearest_index(
+                self.state, self.cx, self.cy, self.cyaw, self.target_ind)
+
+            # Calculate position errors relative to the nearest point
+            x_error = self.cx[self.target_ind] - self.state.x
+            y_error = self.cy[self.target_ind] - self.state.y
+            heading_error = pi_2_pi(self.cyaw[self.target_ind] - self.state.yaw)
+
+            # Publish errors: [x_error, y_error, cross_track_error, heading_error]
+            error_msg = Float64MultiArray()
+            error_msg.data = [float(x_error), float(y_error),
+                            float(cross_track_error), float(heading_error)]
+            self.publisher_path_error.publish(error_msg)
 
             x0 = [self.state.x, self.state.y, self.state.v, self.state.yaw]
 
