@@ -45,6 +45,7 @@ install(
   scripts/pure_pursuit_ackermann.py
   scripts/model_predictive_control.py
   scripts/test_path_publisher.py
+  scripts/mpc_tb3.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

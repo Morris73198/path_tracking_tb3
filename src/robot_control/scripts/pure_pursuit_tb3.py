@@ -17,7 +17,7 @@ vel = 0
 
 # Parameters
 k = 0.1  # look forward gain
-Lfc = 0.5  # [m] look-ahead distance (reduced for TurtleBot3)
+Lfc = 0.3  # [m] look-ahead distance (reduced for TurtleBot3)
 Kp = 1.0  # speed proportional gain
 dt = 0.1  # [s] time tick
 
@@ -26,16 +26,32 @@ class State:
     def __init__(self):
         global observation, vel
         self.yaw = observation[2]
+        self.prev_yaw = observation[2]
         self.v = 0.0
         self.x = observation[0]
         self.y = observation[1]
 
     def update(self, a, time_interval):
         global observation
-        self.yaw = observation[2]
-        self.v += a * time_interval
+
+        # Update from odometry
         self.x = observation[0]
         self.y = observation[1]
+        self.yaw = observation[2]
+
+        # Handle yaw angle discontinuity (prevents unwanted spinning)
+        dyaw = self.yaw - self.prev_yaw
+        while dyaw >= math.pi / 2.0:
+            self.yaw -= math.pi * 2.0
+            dyaw = self.yaw - self.prev_yaw
+        while dyaw <= -math.pi / 2.0:
+            self.yaw += math.pi * 2.0
+            dyaw = self.yaw - self.prev_yaw
+
+        self.prev_yaw = self.yaw
+
+        # Update velocity
+        self.v += a * time_interval
 
         return self.v
 
@@ -108,8 +124,8 @@ class Commander(Node):
 
         self.timer = self.create_timer(self.time_interval, self.timer_callback)
 
-        self.target_speed = 0.3  # (m/s) - reduced for TurtleBot3
-        self.max_angular_vel = 1.5  # (rad/s)
+        self.target_speed = 0.22  # (m/s) - reduced for TurtleBot3
+        self.max_angular_vel = 1.0  # (rad/s) - reduced to prevent spinning
 
         # initial state
         self.state = State()
@@ -188,7 +204,15 @@ class Commander(Node):
                 elif omega < -self.max_angular_vel:
                     omega = -self.max_angular_vel
 
-                cmd.linear.x = state_vel
+                # Reduce linear velocity when turning sharply
+                if abs(alpha) > math.pi / 4:  # if angle error > 45 degrees
+                    linear_vel = state_vel * 0.5  # reduce speed by 50%
+                elif abs(alpha) > math.pi / 6:  # if angle error > 30 degrees
+                    linear_vel = state_vel * 0.7  # reduce speed by 30%
+                else:
+                    linear_vel = state_vel
+
+                cmd.linear.x = linear_vel
                 cmd.angular.z = omega
             else:  # goal reached
                 cmd.linear.x = 0.0
