@@ -46,6 +46,7 @@ install(
   scripts/model_predictive_control.py
   scripts/test_path_publisher.py
   scripts/mpc_tb3.py
+  scripts/plot_path_error.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

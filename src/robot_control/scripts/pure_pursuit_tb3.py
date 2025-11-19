@@ -117,6 +117,9 @@ class Commander(Node):
         # TurtleBot3 uses cmd_vel (Twist message)
         self.publisher_cmd_vel = self.create_publisher(Twist, '/cmd_vel', 10)
 
+        # Publisher for path tracking errors
+        self.publisher_path_error = self.create_publisher(Float64MultiArray, '/path_error', 10)
+
         self.time_interval = 0.02
         self.t = 0
 
@@ -186,6 +189,39 @@ class Commander(Node):
             ai = self.proportional_control(self.target_speed, self.state.v)
             alpha, self.target_ind, Lf = self.pure_pursuit_steer_control(
                 self.state, self.target_course, self.target_ind)
+
+            # Calculate and publish path tracking errors
+            # Find nearest point on path
+            dx = [self.state.x - icx for icx in self.target_course.cx]
+            dy = [self.state.y - icy for icy in self.target_course.cy]
+            d = np.hypot(dx, dy)
+            nearest_ind = np.argmin(d)
+
+            # Calculate errors
+            x_error = float(self.target_course.cx[nearest_ind] - self.state.x)
+            y_error = float(self.target_course.cy[nearest_ind] - self.state.y)
+            cross_track_error = float(d[nearest_ind])
+
+            # Calculate heading error (if path has orientation)
+            if nearest_ind < len(self.target_course.cx) - 1:
+                path_angle = math.atan2(
+                    self.target_course.cy[nearest_ind + 1] - self.target_course.cy[nearest_ind],
+                    self.target_course.cx[nearest_ind + 1] - self.target_course.cx[nearest_ind]
+                )
+                heading_error = path_angle - self.state.yaw
+                # Normalize to [-pi, pi]
+                while heading_error > math.pi:
+                    heading_error -= 2.0 * math.pi
+                while heading_error < -math.pi:
+                    heading_error += 2.0 * math.pi
+                heading_error = float(heading_error)
+            else:
+                heading_error = 0.0
+
+            # Publish errors: [x_error, y_error, cross_track_error, heading_error]
+            error_msg = Float64MultiArray()
+            error_msg.data = [x_error, y_error, cross_track_error, heading_error]
+            self.publisher_path_error.publish(error_msg)
 
             state_vel = self.state.update(ai, self.time_interval)
 
