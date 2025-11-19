@@ -95,7 +95,14 @@ def main(args=None):
     plotter = PathErrorPlotter(max_points=500)
 
     # Set up matplotlib figure
-    plt.style.use('seaborn-v0_8-darkgrid')
+    try:
+        plt.style.use('seaborn-v0_8-darkgrid')
+    except OSError:
+        try:
+            plt.style.use('seaborn-darkgrid')
+        except OSError:
+            plt.style.use('ggplot')  # Fallback to ggplot style
+
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8))
     fig.suptitle('Path Tracking Error Monitor', fontsize=16, fontweight='bold')
 
