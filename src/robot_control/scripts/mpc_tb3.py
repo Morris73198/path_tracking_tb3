@@ -16,7 +16,7 @@ observation = np.array([0.0, 0.0, 0.0], float)  # x, y, yaw angle
 path = []
 
 # TurtleBot3 parameters
-MAX_LINEAR_VEL = 0.22  # [m/s] TurtleBot3 Burger max linear velocity
+MAX_LINEAR_VEL = 55.0 / 3.6  # [m/s] TurtleBot3 Burger max linear velocity
 MAX_ANGULAR_VEL = 2.84  # [rad/s] TurtleBot3 Burger max angular velocity
 MAX_LINEAR_ACC = 0.5   # [m/s^2] maximum linear acceleration
 MAX_ANGULAR_ACC = 3.0  # [rad/s^2] maximum angular acceleration
@@ -28,9 +28,9 @@ T = 10  # prediction horizon length
 DT = 0.1  # [s] time step
 
 # Cost matrices
-R = np.diag([0.01, 0.5])  # input cost matrix [a, omega] - higher omega cost prevents spinning
+R = np.diag([0.5, 0.01])  # input cost matrix [a, omega] - higher omega cost prevents spinning
 Rd = np.diag([0.01, 1.0])  # input difference cost matrix - smooth angular changes
-Q = np.diag([1.0, 1.0, 0.5, 0.3])  # state cost matrix [x, y, v, yaw] - lower yaw weight
+Q = np.diag([3.0, 3.0, 1.5, 0.3])  # state cost matrix [x, y, v, yaw] - lower yaw weight
 Qf = Q  # terminal state cost matrix
 
 # Control parameters
