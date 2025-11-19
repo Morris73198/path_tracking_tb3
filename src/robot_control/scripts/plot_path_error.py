@@ -135,7 +135,9 @@ def main(args=None):
         blit=False
     )
 
-    plt.tight_layout()
+    # Adjust layout to prevent title overlap
+    # rect=[left, bottom, right, top] in figure coordinates
+    plt.tight_layout(rect=[0, 0, 1, 0.96])
 
     # Show plot in non-blocking mode
     plt.ion()
